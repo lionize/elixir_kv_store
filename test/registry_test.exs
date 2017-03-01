@@ -1,6 +1,7 @@
 defmodule RegistryTest do
   use ExUnit.Case, async: true
   alias KV.Registry
+  alias KV.Bucket
 
   setup do
     {:ok, registry} = Registry.start_link()
@@ -8,12 +9,19 @@ defmodule RegistryTest do
   end
 
   test "spawns buckets", %{registry: registry} do
-    assert KV.Registry.lookup(registry, "shopping") == :error
+    assert Registry.lookup(registry, "shopping") == :error
 
-    KV.Registry.create(registry, "shopping")
-    assert {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+    Registry.create(registry, "shopping")
+    assert {:ok, bucket} = Registry.lookup(registry, "shopping")
 
-    KV.Bucket.put(bucket, "milk", 1)
-    assert KV.Bucket.get(bucket, "milk") == 1
+    Bucket.put(bucket, "milk", 1)
+    assert Bucket.get(bucket, "milk") == 1
+  end
+
+  test "removes buckets on exit", %{registry: registry} do
+    Registry.create(registry, "shopping")
+    {:ok, bucket} = Registry.lookup(registry, "shopping")
+    Agent.stop(bucket)
+    assert Registry.lookup(registry, "shopping") == :error
   end
 end
