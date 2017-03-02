@@ -24,4 +24,16 @@ defmodule RegistryTest do
     Agent.stop(bucket)
     assert Registry.lookup(registry, "shopping") == :error
   end
+
+  test "removes bucket on crash", %{registry: registry} do
+    Registry.create(registry, "shopping")
+    {:ok, bucket} = Registry.lookup(registry, "shopping")
+
+    ref = Process.monitor(bucket)
+    Process.exit(bucket, :shutdown)
+
+    assert_receive {:DOWN, ^ref, _, _, _}
+
+    assert Registry.lookup(registry, "shopping") == :error
+  end
 end
