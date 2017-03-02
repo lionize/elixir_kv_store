@@ -3,8 +3,8 @@ defmodule RegistryTest do
   alias KV.Registry
   alias KV.Bucket
 
-  setup do
-    {:ok, registry} = Registry.start_link()
+  setup context do
+    {:ok, registry} = Registry.start_link(context.test)
     {:ok, registry: registry}
   end
 
