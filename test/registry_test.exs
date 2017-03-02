@@ -4,8 +4,8 @@ defmodule RegistryTest do
   alias KV.Bucket
 
   setup context do
-    {:ok, registry} = Registry.start_link(context.test)
-    {:ok, registry: registry}
+    {:ok, _} = Registry.start_link(context.test)
+    {:ok, registry: context.test}
   end
 
   test "spawns buckets", %{registry: registry} do
@@ -22,6 +22,9 @@ defmodule RegistryTest do
     Registry.create(registry, "shopping")
     {:ok, bucket} = Registry.lookup(registry, "shopping")
     Agent.stop(bucket)
+
+    # Do a call to ensure registry processes the DOWN message
+    _ = Registry.create(registry, "bogus")
     assert Registry.lookup(registry, "shopping") == :error
   end
 
@@ -29,11 +32,12 @@ defmodule RegistryTest do
     Registry.create(registry, "shopping")
     {:ok, bucket} = Registry.lookup(registry, "shopping")
 
-    ref = Process.monitor(bucket)
     Process.exit(bucket, :shutdown)
 
+    ref = Process.monitor(bucket)
     assert_receive {:DOWN, ^ref, _, _, _}
 
+    _ = Registry.create(registry, "bogus")
     assert Registry.lookup(registry, "shopping") == :error
   end
 end
